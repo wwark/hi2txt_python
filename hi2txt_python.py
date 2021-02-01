@@ -23,7 +23,6 @@ def verify_size_file():
 
 
 def build_structure():
-	print('build_structure')
 	# return at the begining of the file
 	file_binary.seek(0, 0)
 	for child in root:
@@ -220,10 +219,10 @@ if not verify_size_file():
 # List structure of datas from nvram file or hi file following informations of xml file
 data_structure = []
 data_structure_loop = []
+# Build structure
 build_structure()
+# Print in the console
 print_fields()
 print_table_fields()
 print_table_columns()
-
-
 				
