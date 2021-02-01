@@ -60,13 +60,17 @@ def produce_value(output_id, format_value):
 	json_parser = json.loads(output_id.replace('\'', '\"').replace('b"', '"'))
 	if 'int' in json_parser['type']:
 		if '16' in json_parser['base']:
-			if 'odd' in json_parser['nibble-skip']:
-				# 01AB01CD -> nibble-skip="odd" -> 1B1D (in base 16)
-				value = base64.standard_b64decode(json_parser['etl_value_in_bytes'].replace('\'', '\"'))
-				value = value.hex()
-				final_value = ''
-				for x in range(1,len(value),2):
-					final_value = final_value + value[x]
+			value = base64.standard_b64decode(json_parser['etl_value_in_bytes'].replace('\'', '\"'))
+			value = value.hex()
+			if 'nibble-skip' in json_parser:
+				if 'odd' in json_parser['nibble-skip']:
+					# 01AB01CD -> nibble-skip="odd" -> 1B1D (in base 16)
+					for x in range(1,len(value),2):
+						final_value = final_value + value[x]
+			if 'endianness' in json_parser:
+				if 'little_endian' in json_parser['endianness']:
+					# TODO 
+					final_value =  value
 
 		if format_value != '':
 			for child2 in root:
@@ -186,7 +190,7 @@ def print_table_columns():
 
 
 # Start Program
-# example : python test_highscore_dump_from_hi_nvram_mame_files.py robotron.xml robotron.nvram
+# example : python hi2txt.py robotron.xml robotron.nvram
 
 # GetExtension of sys.argv[1] and sys.argv[2]
 if not sys.argv[1].endswith('.xml'):
@@ -196,7 +200,7 @@ if not sys.argv[1].endswith('.xml'):
 if sys.argv[2].endswith('.nvram'):
 	extension_value = 'nvram'
 elif sys.argv[2].endswith('.hi'):
-	extension_value = 'hi'
+	extension_value = '.hi'
 else:
 	print('ERR : not supported files')
 	exit()
@@ -208,7 +212,7 @@ root = tree.getroot()
 file_binary = open(sys.argv[2], "rb")
 
 if not verify_size_file():
-	print('Size No OK')
+	print('Size Not OK')
 	exit()
 
 # List structure of datas from nvram file or hi file following informations of xml file
