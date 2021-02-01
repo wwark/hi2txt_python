@@ -56,21 +56,21 @@ def build_structure():
 
 def produce_value(output_id, format_value):
 	final_value = ''
-	# a little hack to be compliante to json parser
 	json_parser = json.loads(output_id.replace('\'', '\"').replace('b"', '"'))
+
 	if 'int' in json_parser['type']:
 		if '16' in json_parser['base']:
 			value = base64.standard_b64decode(json_parser['etl_value_in_bytes'].replace('\'', '\"'))
-			value = value.hex()
+			if 'endianness' in json_parser:
+				if 'little_endian' in json_parser['endianness']:
+					final_value = int(value[::-1].hex())
+			else:
+				value = value.hex()
 			if 'nibble-skip' in json_parser:
 				if 'odd' in json_parser['nibble-skip']:
 					# 01AB01CD -> nibble-skip="odd" -> 1B1D (in base 16)
 					for x in range(1,len(value),2):
 						final_value = final_value + value[x]
-			if 'endianness' in json_parser:
-				if 'little_endian' in json_parser['endianness']:
-					# TODO 
-					final_value =  value
 
 		if format_value != '':
 			for child2 in root:
@@ -88,9 +88,11 @@ def produce_value(output_id, format_value):
 								final_value = str(int(final_value) + int(subchild.text))
 		else:
 			final_value = int(final_value)
+
 	elif 'raw' in json_parser['type']:
 		value = base64.standard_b64decode(json_parser['etl_value_in_bytes'].replace('\'', '\"'))
 		final_value = value.hex()
+
 	elif 'text' in json_parser['type']:
 		# Replace Robotron 0x3A by " " => 0x3A = :
 		#<charset id="robotron">
@@ -219,8 +221,6 @@ if not verify_size_file():
 data_structure = []
 data_structure_loop = []
 build_structure()
-# print(data_structure)
-# print(data_structure_loop)
 print_fields()
 print_table_fields()
 print_table_columns()
