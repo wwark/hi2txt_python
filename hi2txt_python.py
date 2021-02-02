@@ -52,7 +52,7 @@ def build_structure():
 						data_structure_loop.append(datas)
 
 
-def produce_value(output_id, format_value):
+def convert_value_from_bytes(output_id):
 	final_value = ''
 	json_parser = json.loads(output_id.replace('\'', '\"').replace('b"', '"'))
 
@@ -72,21 +72,6 @@ def produce_value(output_id, format_value):
 						working_value = working_value + value[x]
 					final_value = working_value
 
-		if format_value != '':
-			for child2 in root:
-				if child2.tag == 'format':
-					if format_value in child2.attrib['id']:
-						working_value = final_value
-						for subchild in child2:
-							if 'case' in subchild.tag:
-								if int(subchild.attrib['src']) == int(working_value):
-									final_value = subchild.attrib['dst']
-							elif 'multiply' in subchild.tag:
-								final_value = str(int(working_value) * int(subchild.text))
-							elif 'add' in subchild.tag:
-								final_value = str(int(working_value) + int(subchild.text))
-		else:
-			final_value = int(final_value)
 		return final_value
 
 	elif 'raw' in json_parser['type']:
@@ -107,9 +92,26 @@ def produce_value(output_id, format_value):
 			return bytearray.fromhex(final_value).decode()
 
 
+def format_converted_value(value_to_format, format_value):
+
+	final_value = 'VALUE_TO_FORMAT'
+	for child2 in root:
+		if child2.tag == 'format':
+			if format_value in child2.attrib['id']:
+				working_value = value_to_format
+				for subchild in child2:
+					if 'case' in subchild.tag:
+						if int(subchild.attrib['src']) == int(working_value):
+							final_value = subchild.attrib['dst']
+					elif 'multiply' in subchild.tag:
+						final_value = str(int(working_value) * int(subchild.text))
+					elif 'add' in subchild.tag:
+						final_value = str(int(working_value) + int(subchild.text))
+	return final_value
+
+
 def print_fields():
 
-	# Print Output using format and charset informations of xml file
 	for child in root:
 		if child.tag == 'output':
 			for output_child in child:
@@ -121,20 +123,22 @@ def print_fields():
 						if output_child.attrib['id'] in str(x):
 							datas_child_field = []
 							datas_child_field.append(output_child.attrib['id'])
-							datas_child_field.append(str(produce_value(str(x), format_value)))
+							working_value = ''
+							working_value = convert_value_from_bytes(str(x))
+							if format_value != '':
+								working_value = format_converted_value(working_value, format_value)
+							datas_child_field.append(working_value)
 					if len(datas_child_field) > 0:
 						print(datas_child_field)
 
 
 def print_table_fields():
 	
-	# Print Output using format and charset informations of xml file
 	for child in root:
 		if child.tag == 'output':
 			for output_child in child:
 				format_value = ''
 				if output_child.tag == 'table':
-					# Title Child Table
 					title_child_table = []
 					datas_child_table_field = []
 					for table_child in output_child:
@@ -144,7 +148,11 @@ def print_table_fields():
 							title_child_table.append(table_child.attrib['id'])
 							for x in  data_structure:
 								if table_child.attrib['id'] in str(x):
-									datas_child_table_field.append(produce_value(str(x),format_value))
+									working_value = ''
+									working_value = convert_value_from_bytes(str(x))
+									if format_value != '':
+										working_value = format_converted_value(working_value, format_value)
+									datas_child_table_field.append(working_value)
 							
 					if len(title_child_table) > 0:
 						print(title_child_table)
@@ -154,13 +162,11 @@ def print_table_fields():
 
 def print_table_columns():
 
-	# Print Output using format and charset informations of xml file
 	for child in root:
 		if child.tag == 'output':
 			for output_child in child:
 				format_value = ''
 				if output_child.tag == 'table':
-					# Title Child Table
 					title_child_table = []
 					datas_child_table_column = []
 					for table_child in output_child:
@@ -182,7 +188,11 @@ def print_table_columns():
 							else:
 								for key_column in values_column_datas:
 									if key_column == 'VALUES_' + title_column + '_' + values_column_datas['INC']:
-										datas.append(produce_value(str(values_column_datas[key_column][0]), format_value))
+										working_value = ''
+										working_value = convert_value_from_bytes(str(values_column_datas[key_column][0]))
+										if format_value != '':
+											working_value = format_converted_value(working_value, format_value)
+										datas.append(working_value)
 						datas_child_table_column_print.append(datas)
 					
 					if len(title_child_table) > 0:
