@@ -55,14 +55,13 @@ def build_structure():
 def convert_value_from_bytes(output_id):
 	final_value = ''
 	json_parser = json.loads(output_id.replace('\'', '\"').replace('b"', '"'))
+	value = base64.standard_b64decode(json_parser['etl_value_in_bytes'].replace('\'', '\"'))
 
 	if 'int' in json_parser['type']:
 		if '16' in json_parser['base']:
-			value = base64.standard_b64decode(json_parser['etl_value_in_bytes'].replace('\'', '\"'))
 			if 'endianness' in json_parser:
 				if 'little_endian' in json_parser['endianness']:
 					final_value = int(value[::-1].hex())
-
 			if 'nibble-skip' in json_parser:
 				if 'odd' in json_parser['nibble-skip']:
 					# 01AB01CD -> nibble-skip="odd" -> 1B1D (in base 16)
@@ -70,26 +69,29 @@ def convert_value_from_bytes(output_id):
 					value = value.hex()
 					for x in range(1,len(value),2):
 						working_value = working_value + value[x]
-					final_value = working_value
-
+					final_value = int(working_value)
+			if final_value == '':
+				final_value = int(value.hex())
 		return final_value
 
 	elif 'raw' in json_parser['type']:
-		value = base64.standard_b64decode(json_parser['etl_value_in_bytes'].replace('\'', '\"'))
 		return value.hex()
 
 	elif 'text' in json_parser['type']:
 		# Replace Robotron 0x3A by " " => 0x3A = :
 		#<charset id="robotron">
 		#	<char src="0x3A" dst=" "/>
-		#  </charset>		
-		if 'odd' in json_parser['nibble-skip']:
-			value = base64.standard_b64decode(json_parser['etl_value_in_bytes'].replace('\'', '\"'))
-			final_value = ''
+		#  </charset>
+		if 'nibble-skip' in json_parser:
+			if 'odd' in json_parser['nibble-skip']:
+				final_value = ''
+				value = value.hex()
+				for x in range(1,len(value),2):
+					final_value = final_value + value[x]
+				return bytearray.fromhex(final_value).decode()
+		else:
 			value = value.hex()
-			for x in range(1,len(value),2):
-				final_value = final_value + value[x]
-			return bytearray.fromhex(final_value).decode()
+			return bytearray.fromhex(value).decode()
 
 
 def format_converted_value(value_to_format, format_value):

@@ -8,7 +8,7 @@ example : python3 hi2txt_python.py robotron.xml robotron.nvram
 | ----- | ------ |
 | anteater | :x: |
 | armorcar | :x: |
-| atlantis2 | :x: |
+| atlantis2 | :heavy_check_mark: |
 | calipso | :x: |
 | galaxian | :heavy_check_mark: |
 | rampage | :x: |
