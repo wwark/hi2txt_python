@@ -2,7 +2,6 @@ import sys
 import xml.etree.ElementTree as ET
 import json
 import base64
-import binascii
 
 
 def verify_size_file():
@@ -40,7 +39,7 @@ def build_structure():
 					for x in range(range_start, range_end):
 						datas = {}
 						datas['LOOP'] = 'LOOP_' + structure_child[0].attrib['id']
-						datas['RANK'] = str(x)
+						datas['INC'] = str(x)
 						for loop_child in structure_child:
 							datas_loop = []
 							if loop_child.tag == 'elt':
@@ -63,34 +62,36 @@ def produce_value(output_id, format_value):
 			if 'endianness' in json_parser:
 				if 'little_endian' in json_parser['endianness']:
 					final_value = int(value[::-1].hex())
-			else:
-				value = value.hex()
+
 			if 'nibble-skip' in json_parser:
 				if 'odd' in json_parser['nibble-skip']:
 					# 01AB01CD -> nibble-skip="odd" -> 1B1D (in base 16)
+					working_value = ''
+					value = value.hex()
 					for x in range(1,len(value),2):
-						final_value = final_value + value[x]
+						working_value = working_value + value[x]
+					final_value = working_value
 
 		if format_value != '':
 			for child2 in root:
 				if child2.tag == 'format':
-					if format_value in child2.attrib['id'] and format_value == 'yes_no':
-						if int(final_value) > 0:
-							final_value = 'YES'
-						else:
-							final_value = 'NO'
-					elif format_value in child2.attrib['id']:
+					if format_value in child2.attrib['id']:
+						working_value = final_value
 						for subchild in child2:
-							if 'multiply' in subchild.tag:
-								final_value = str(int(final_value) * int(subchild.text))
+							if 'case' in subchild.tag:
+								if int(subchild.attrib['src']) == int(working_value):
+									final_value = subchild.attrib['dst']
+							elif 'multiply' in subchild.tag:
+								final_value = str(int(working_value) * int(subchild.text))
 							elif 'add' in subchild.tag:
-								final_value = str(int(final_value) + int(subchild.text))
+								final_value = str(int(working_value) + int(subchild.text))
 		else:
 			final_value = int(final_value)
+		return final_value
 
 	elif 'raw' in json_parser['type']:
 		value = base64.standard_b64decode(json_parser['etl_value_in_bytes'].replace('\'', '\"'))
-		final_value = value.hex()
+		return value.hex()
 
 	elif 'text' in json_parser['type']:
 		# Replace Robotron 0x3A by " " => 0x3A = :
@@ -103,8 +104,7 @@ def produce_value(output_id, format_value):
 			value = value.hex()
 			for x in range(1,len(value),2):
 				final_value = final_value + value[x]
-			final_value = bytearray.fromhex(final_value).decode()
-	return final_value
+			return bytearray.fromhex(final_value).decode()
 
 
 def print_fields():
@@ -177,10 +177,11 @@ def print_table_columns():
 						datas = []
 						for title_column in title_child_table:
 							if title_column == 'RANK':
-								datas.append(int(values_column_datas['RANK']) + 1)
+								# continue
+								datas.append(int(values_column_datas['INC']) + 1)
 							else:
 								for key_column in values_column_datas:
-									if key_column == 'VALUES_' + title_column + '_' + values_column_datas['RANK']:
+									if key_column == 'VALUES_' + title_column + '_' + values_column_datas['INC']:
 										datas.append(produce_value(str(values_column_datas[key_column][0]), format_value))
 						datas_child_table_column_print.append(datas)
 					
@@ -225,4 +226,4 @@ build_structure()
 print_fields()
 print_table_fields()
 print_table_columns()
-				
+# print(data_structure_loop)
