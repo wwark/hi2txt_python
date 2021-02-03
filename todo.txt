@@ -1,4 +1,3 @@
-Rampage - format 1+name
 Robotron - implement charset : stuff to remove ":" from name in highscore
 Robotron - implement format : hexadecimal_string
 Robotron - Heroes Score incorporate Top Score if above some Heroes Score
@@ -6,3 +5,4 @@ Add those options below
 (-r: read main high score entries
   -ra: read all high score entries
   -rd: read all high score entries as well as debug entries; also activate traces)
+Build output (json and xml)

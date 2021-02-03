@@ -97,12 +97,20 @@ def convert_value_from_bytes(output_id):
 def format_converted_value(value_to_format, format_value):
 
 	final_value = 'VALUE_TO_FORMAT'
+
+	# Case Rampage with this format (+1;name)
 	list_format_value = format_value.split(';')
 	if len(list_format_value) > 1:
 		if list_format_value[0] == '+1':
 			value_to_format = value_to_format + 1
 			format_value = list_format_value[1]
 
+	# Case no child format
+	if len(root.findall('format')) == 0:
+		if format_value == '+1':
+			final_value = value_to_format + 1
+
+	# Case childs format present
 	for child2 in root:
 		if child2.tag == 'format':
 			if format_value in child2.attrib['id']:
